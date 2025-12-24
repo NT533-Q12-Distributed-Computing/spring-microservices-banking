@@ -1,15 +1,8 @@
-name: Docker CI (Selective Build with Trivy)
+name: Docker CI (Selective Build & Trivy Scan)
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'Service-Registry/**'
-      - 'API-Gateway/**'
-      - 'User-Service/**'
-      - 'Account-Service/**'
-      - 'Transaction-Service/**'
-      - '.github/workflows/docker-ci.yml'
   workflow_dispatch:
 
 env:
@@ -17,13 +10,46 @@ env:
   IMAGE_TAG: v1
 
 jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      service_registry: ${{ steps.filter.outputs.service_registry }}
+      api_gateway: ${{ steps.filter.outputs.api_gateway }}
+      user_service: ${{ steps.filter.outputs.user_service }}
+      account_service: ${{ steps.filter.outputs.account_service }}
+      transaction_service: ${{ steps.filter.outputs.transaction_service }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            service_registry:
+              - 'Service-Registry/**'
+            api_gateway:
+              - 'API-Gateway/**'
+            user_service:
+              - 'User-Service/**'
+            account_service:
+              - 'Account-Service/**'
+            transaction_service:
+              - 'Transaction-Service/**'
+
   service-registry:
-    if: contains(github.event.head_commit.message, '') || contains(join(github.event.commits.*.modified, ','), 'Service-Registry/')
+    name: Build & Push service-registry
+    needs: detect-changes
+    if: needs.detect-changes.outputs.service_registry == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -42,12 +68,16 @@ jobs:
         run: docker push $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG
 
   api-gateway:
-    if: contains(join(github.event.commits.*.modified, ','), 'API-Gateway/')
+    name: Build & Push api-gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api_gateway == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -66,12 +96,16 @@ jobs:
         run: docker push $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
 
   user-service:
-    if: contains(join(github.event.commits.*.modified, ','), 'User-Service/')
+    name: Build & Push user-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user_service == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -88,3 +122,59 @@ jobs:
 
       - name: Push user-service
         run: docker push $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
+
+  account-service:
+    name: Build & Push account-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.account_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build account-service
+        run: docker build -t $IMAGE_NAMESPACE/account-service:$IMAGE_TAG ./Account-Service
+
+      - name: Trivy scan account-service
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+      - name: Push account-service
+        run: docker push $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
+
+  transaction-service:
+    name: Build & Push transaction-service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.transaction_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build transaction-service
+        run: docker build -t $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG ./Transaction-Service
+
+      - name: Trivy scan transaction-service
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+      - name: Push transaction-service
+        run: docker push $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG

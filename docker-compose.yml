@@ -1,0 +1,133 @@
+version: "3.9"
+
+services:
+  # =========================
+  # Service Registry (Eureka)
+  # =========================
+  service-registry:
+    build: ./Service-Registry
+    image: tienphatng237/service-registry:docker
+    container_name: service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  # =========================
+  # MySQL - User Service
+  # =========================
+  mysql-user:
+    image: mysql:8.0
+    container_name: mysql-user
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_db
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================
+  # MySQL - Account Service
+  # =========================
+  mysql-account:
+    image: mysql:8.0
+    container_name: mysql-account
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: account_db
+    ports:
+      - "3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================
+  # MySQL - Transaction Service
+  # =========================
+  mysql-transaction:
+    image: mysql:8.0
+    container_name: mysql-transaction
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: transaction_db
+    ports:
+      - "3309:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================
+  # User Service
+  # =========================
+  user-service:
+    build: ./User-Service
+    image: tienphatng237/user-service:docker
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql-user:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
+  # =========================
+  # Account Service
+  # =========================
+  account-service:
+    build: ./Account-Service
+    image: tienphatng237/account-service:docker
+    container_name: account-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql-account:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
+  # =========================
+  # Transaction Service
+  # =========================
+  transaction-service:
+    build: ./Transaction-Service
+    image: tienphatng237/transaction-service:docker
+    container_name: transaction-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql-transaction:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
+  # =========================
+  # API Gateway
+  # =========================
+  api-gateway:
+    build: ./API-Gateway
+    image: tienphatng237/api-gateway:docker
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - user-service
+      - account-service
+      - transaction-service
+      - service-registry

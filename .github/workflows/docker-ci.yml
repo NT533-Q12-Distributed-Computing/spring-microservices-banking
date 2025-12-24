@@ -10,9 +10,9 @@ env:
   IMAGE_TAG: v1
 
 jobs:
-  # =====================================================
-  # Detect which microservices have changed
-  # =====================================================
+# =====================================================
+# Detect changed microservices
+# =====================================================
   detect-changes:
     name: Detect changed services
     runs-on: ubuntu-latest
@@ -24,11 +24,9 @@ jobs:
       transaction_service: ${{ steps.filter.outputs.transaction_service }}
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Detect changed paths
-        id: filter
+      - id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -43,9 +41,9 @@ jobs:
             transaction_service:
               - 'Transaction-Service/**'
 
-  # =====================================================
-  # SERVICE REGISTRY
-  # =====================================================
+# =====================================================
+# TEMPLATE FOR MICROSERVICE JOBS
+# =====================================================
   service-registry:
     name: Build & Push service-registry
     needs: detect-changes
@@ -62,22 +60,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build service-registry
+      - name: Build image
         run: docker build -t $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG ./Service-Registry
 
-      - name: Trivy scan service-registry
+      - name: Trivy scan (DEV mode)
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAMESPACE }}/service-registry:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
-          exit-code: 0   # DEV MODE: do not fail pipeline
+          exit-code: 0
 
-      - name: Push service-registry
+      - name: Push image
         run: docker push $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG
 
-  # =====================================================
-  # API GATEWAY
-  # =====================================================
+# =====================================================
   api-gateway:
     name: Build & Push api-gateway
     needs: detect-changes
@@ -88,28 +84,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build api-gateway
-        run: docker build -t $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG ./API-Gateway
+      - run: docker build -t $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG ./API-Gateway
 
-      - name: Trivy scan api-gateway
-        uses: aquasecurity/trivy-action@0.20.0
+      - uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAMESPACE }}/api-gateway:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
           exit-code: 0
 
-      - name: Push api-gateway
-        run: docker push $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
+      - run: docker push $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
 
-  # =====================================================
-  # USER SERVICE
-  # =====================================================
+# =====================================================
   user-service:
     name: Build & Push user-service
     needs: detect-changes
@@ -120,28 +110,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build user-service
-        run: docker build -t $IMAGE_NAMESPACE/user-service:$IMAGE_TAG ./User-Service
+      - run: docker build -t $IMAGE_NAMESPACE/user-service:$IMAGE_TAG ./User-Service
 
-      - name: Trivy scan user-service
-        uses: aquasecurity/trivy-action@0.20.0
+      - uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAMESPACE }}/user-service:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
           exit-code: 0
 
-      - name: Push user-service
-        run: docker push $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
+      - run: docker push $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
 
-  # =====================================================
-  # ACCOUNT SERVICE
-  # =====================================================
+# =====================================================
   account-service:
     name: Build & Push account-service
     needs: detect-changes
@@ -152,28 +136,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build account-service
-        run: docker build -t $IMAGE_NAMESPACE/account-service:$IMAGE_TAG ./Account-Service
+      - run: docker build -t $IMAGE_NAMESPACE/account-service:$IMAGE_TAG ./Account-Service
 
-      - name: Trivy scan account-service
-        uses: aquasecurity/trivy-action@0.20.0
+      - uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAMESPACE }}/account-service:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
           exit-code: 0
 
-      - name: Push account-service
-        run: docker push $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
+      - run: docker push $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
 
-  # =====================================================
-  # TRANSACTION SERVICE
-  # =====================================================
+# =====================================================
   transaction-service:
     name: Build & Push transaction-service
     needs: detect-changes
@@ -184,21 +162,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build transaction-service
-        run: docker build -t $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG ./Transaction-Service
+      - run: docker build -t $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG ./Transaction-Service
 
-      - name: Trivy scan transaction-service
-        uses: aquasecurity/trivy-action@0.20.0
+      - uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAMESPACE }}/transaction-service:${{ env.IMAGE_TAG }}
           severity: HIGH,CRITICAL
           exit-code: 0
 
-      - name: Push transaction-service
-        run: docker push $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG
+      - run: docker push $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG

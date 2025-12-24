@@ -6,7 +6,7 @@ services:
   # =========================
   service-registry:
     build: ./Service-Registry
-    image: tienphatng237/service-registry:docker
+    image: tienphatng237/service-registry:v1
     container_name: service-registry
     ports:
       - "8761:8761"
@@ -69,7 +69,7 @@ services:
   # =========================
   user-service:
     build: ./User-Service
-    image: tienphatng237/user-service:docker
+    image: tienphatng237/user-service:v1
     container_name: user-service
     ports:
       - "8081:8081"
@@ -86,7 +86,7 @@ services:
   # =========================
   account-service:
     build: ./Account-Service
-    image: tienphatng237/account-service:docker
+    image: tienphatng237/account-service:v1
     container_name: account-service
     ports:
       - "8082:8082"
@@ -103,7 +103,7 @@ services:
   # =========================
   transaction-service:
     build: ./Transaction-Service
-    image: tienphatng237/transaction-service:docker
+    image: tienphatng237/transaction-service:v1
     container_name: transaction-service
     ports:
       - "8083:8083"
@@ -120,7 +120,7 @@ services:
   # =========================
   api-gateway:
     build: ./API-Gateway
-    image: tienphatng237/api-gateway:docker
+    image: tienphatng237/api-gateway:v1
     container_name: api-gateway
     ports:
       - "8080:8080"

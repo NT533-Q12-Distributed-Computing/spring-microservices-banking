@@ -10,6 +10,9 @@ env:
   IMAGE_TAG: v1
 
 jobs:
+  # =====================================================
+  # Detect which microservices have changed
+  # =====================================================
   detect-changes:
     name: Detect changed services
     runs-on: ubuntu-latest
@@ -39,11 +42,15 @@ jobs:
             transaction_service:
               - 'Transaction-Service/**'
 
+  # =====================================================
+  # SERVICE REGISTRY
+  # =====================================================
   service-registry:
     name: Build & Push service-registry
     needs: detect-changes
     if: needs.detect-changes.outputs.service_registry == 'true'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -55,23 +62,30 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build service-registry
-        run: docker build -t $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG ./Service-Registry
+        run: |
+          docker build \
+            -t $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG \
+            ./Service-Registry
 
       - name: Trivy scan service-registry
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG
+          image-ref: tienphatng237/service-registry:v1
           severity: HIGH,CRITICAL
           exit-code: 1
 
       - name: Push service-registry
         run: docker push $IMAGE_NAMESPACE/service-registry:$IMAGE_TAG
 
+  # =====================================================
+  # API GATEWAY
+  # =====================================================
   api-gateway:
     name: Build & Push api-gateway
     needs: detect-changes
     if: needs.detect-changes.outputs.api_gateway == 'true'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -83,23 +97,30 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build api-gateway
-        run: docker build -t $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG ./API-Gateway
+        run: |
+          docker build \
+            -t $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG \
+            ./API-Gateway
 
       - name: Trivy scan api-gateway
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
+          image-ref: tienphatng237/api-gateway:v1
           severity: HIGH,CRITICAL
           exit-code: 1
 
       - name: Push api-gateway
         run: docker push $IMAGE_NAMESPACE/api-gateway:$IMAGE_TAG
 
+  # =====================================================
+  # USER SERVICE
+  # =====================================================
   user-service:
     name: Build & Push user-service
     needs: detect-changes
     if: needs.detect-changes.outputs.user_service == 'true'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -111,23 +132,30 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build user-service
-        run: docker build -t $IMAGE_NAMESPACE/user-service:$IMAGE_TAG ./User-Service
+        run: |
+          docker build \
+            -t $IMAGE_NAMESPACE/user-service:$IMAGE_TAG \
+            ./User-Service
 
       - name: Trivy scan user-service
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
+          image-ref: tienphatng237/user-service:v1
           severity: HIGH,CRITICAL
           exit-code: 1
 
       - name: Push user-service
         run: docker push $IMAGE_NAMESPACE/user-service:$IMAGE_TAG
 
+  # =====================================================
+  # ACCOUNT SERVICE
+  # =====================================================
   account-service:
     name: Build & Push account-service
     needs: detect-changes
     if: needs.detect-changes.outputs.account_service == 'true'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -139,23 +167,30 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build account-service
-        run: docker build -t $IMAGE_NAMESPACE/account-service:$IMAGE_TAG ./Account-Service
+        run: |
+          docker build \
+            -t $IMAGE_NAMESPACE/account-service:$IMAGE_TAG \
+            ./Account-Service
 
       - name: Trivy scan account-service
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
+          image-ref: tienphatng237/account-service:v1
           severity: HIGH,CRITICAL
           exit-code: 1
 
       - name: Push account-service
         run: docker push $IMAGE_NAMESPACE/account-service:$IMAGE_TAG
 
+  # =====================================================
+  # TRANSACTION SERVICE
+  # =====================================================
   transaction-service:
     name: Build & Push transaction-service
     needs: detect-changes
     if: needs.detect-changes.outputs.transaction_service == 'true'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -167,12 +202,15 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build transaction-service
-        run: docker build -t $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG ./Transaction-Service
+        run: |
+          docker build \
+            -t $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG \
+            ./Transaction-Service
 
       - name: Trivy scan transaction-service
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: $IMAGE_NAMESPACE/transaction-service:$IMAGE_TAG
+          image-ref: tienphatng237/transaction-service:v1
           severity: HIGH,CRITICAL
           exit-code: 1
 
